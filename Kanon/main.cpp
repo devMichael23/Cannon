@@ -4,47 +4,115 @@
 
 using namespace std;
 
-// Создание матрицы на n строк, m столбцов
-int **create_matrix(int n, int m, int code=0)
+// Создание матрицы на raw строк, column столбцов
+int **create_matrix(int raw, int column, int code=0)
 {
-    int** array = new int*[n];
-    for(int i = 0; i < n; i++)
+    int** matrix = new int*[raw];
+    for(int i = 0; i < raw; i++)
     {
-        array[i] = new int[m];
+        matrix[i] = new int[column];
     }
     
     if (code == 1)
     {
     // Заполнение рандомными числами
     srand(time(0));
-        for(int i = 0; i < n; i++)
+        for(int i = 0; i < raw; i++)
         {
-            for(int j=0; j < m; j++)
+            for(int j = 0; j < column; j++)
             {
-                array[i][j] = 0 + rand() % 1000;;
+                matrix[i][j] = 0 + rand() % 10;
             }
         }
     }
     
-    return array;
+    return matrix;
 }
 
 // Вывод матрицы
-void print_matrix(int** array)
+void print_matrix(int** array, int raw, int column)
 {
-    for(int i = 0; i < 5; i++)
+    for (int i = 0; i < raw; i++)
     {
-        for(int j = 0; j < 6; j++)
+        cout << "x[" << i << "] = ";
+        for (int j = 0; j < column; j++)
         {
-            std::cout << array[i][j] << " ";
+            cout << array[i][j] << " ";
         }
-        std:: cout << std::endl;
+        cout << endl;
     }
+}
+
+void left(int** matrix, int k, int count, int length)
+{
+    for(int i = 0; i < count; i++)
+    {
+        int tmp = matrix[k][0];
+        for(int j = 0; j < (length-1); j++)
+        {
+            matrix[k][j] = matrix[k][j+1];
+        }
+        matrix[k][length-1] = tmp;
+    }
+}
+
+void up(int** matrix, int l, int count, int length)
+{
+    for(int i = 0; i < count; i++)
+    {
+        int tmp = matrix[0][l];
+        for(int j = 0; j < (length-1); j++)
+        {
+            matrix[j][l] = matrix[j+1][l];
+        }
+        matrix[length-1][l] = tmp;
+    }
+}
+
+int** multiplication(int** A, int** B, int raw, int column)
+{
+    int** result = new int*[raw];
+    for (int i = 0; i < raw; i++)
+    {
+        result[i] = new int[raw];
+    }
+    for (int i = 0; i < raw; i++)
+    {
+        left(A, i, i, raw);
+    }
+    for (int i = 0; i < raw; i++)
+    {
+        up(B, i, i, raw);
+    }
+    
+    for (int i = 0; i < raw; i++)
+    {
+        for (int j = 0; j < raw; j++)
+        {
+            for (int k = 0; k < raw; k++)
+            {
+                int tmp = (i + j + k) % raw;
+                result[j][k] += A[j][tmp] * B[tmp][k];
+                left(A, j, 1, raw);
+                up(B, k, 1, raw);
+            }
+        }
+    }
+    return result;
 }
 
 int main()
 {
-    
+    int** A = create_matrix(3, 3, 1);
+    int** B = create_matrix(3, 3, 1);
+    cout << "A:" << endl;
+    print_matrix(A, 3, 3);
+    cout << "B:" << endl;
+    print_matrix(B, 3, 3);
+    int** C = multiplication(A, B, 3, 3);
+    cout << "C:" << endl;
+    print_matrix(C, 3, 3);
+
     
     return 0;
 }
