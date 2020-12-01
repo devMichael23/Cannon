@@ -45,56 +45,77 @@ void print_matrix(int** array, int raw, int column)
 
 void left(int** matrix, int k, int count, int length)
 {
-    for(int i = 0; i < count; i++)
+#pragma omp parallel
     {
-        int tmp = matrix[k][0];
-        for(int j = 0; j < (length-1); j++)
+    #pragma omp parallel for
+        for(int i = 0; i < count; i++)
         {
-            matrix[k][j] = matrix[k][j+1];
+            int tmp = matrix[k][0];
+        #pragma omp parallel for
+            for(int j = 0; j < (length-1); j++)
+            {
+                matrix[k][j] = matrix[k][j+1];
+            }
+            matrix[k][length-1] = tmp;
         }
-        matrix[k][length-1] = tmp;
     }
 }
 
 void up(int** matrix, int l, int count, int length)
 {
-    for(int i = 0; i < count; i++)
+#pragma omp parallel
     {
-        int tmp = matrix[0][l];
-        for(int j = 0; j < (length-1); j++)
+    #pragma omp parallel for
+        for(int i = 0; i < count; i++)
         {
-            matrix[j][l] = matrix[j+1][l];
+            int tmp = matrix[0][l];
+        #pragma omp parallel for
+            for(int j = 0; j < (length-1); j++)
+            {
+                matrix[j][l] = matrix[j+1][l];
+            }
+            matrix[length-1][l] = tmp;
         }
-        matrix[length-1][l] = tmp;
     }
 }
 
-int** multiplication(int** A, int** B, int raw, int column)
+int** multiplication(int** A, int** B, int raw, int column, int threads)
 {
-    int** result = new int*[raw];
-    for (int i = 0; i < raw; i++)
+    int ** result = new int*[raw];
+    omp_set_num_threads(threads);
+#pragma omp parallel
     {
-        result[i] = new int[raw];
-    }
-    for (int i = 0; i < raw; i++)
-    {
-        left(A, i, i, raw);
-    }
-    for (int i = 0; i < raw; i++)
-    {
-        up(B, i, i, raw);
-    }
-    
-    for (int i = 0; i < raw; i++)
-    {
-        for (int j = 0; j < raw; j++)
+        result = new int*[raw];
+    #pragma omp parallel for
+        for (int i = 0; i < raw; i++)
         {
-            for (int k = 0; k < raw; k++)
+            result[i] = new int[raw];
+        }
+    #pragma omp parallel for
+        for (int i = 0; i < raw; i++)
+        {
+        left(A, i, i, raw);
+        }
+    #pragma omp parallel for
+        for (int i = 0; i < raw; i++)
+        {
+        up(B, i, i, raw);
+        }
+    
+    #pragma omp parallel for
+        for (int i = 0; i < raw; i++)
+        {
+        #pragma omp parallel for
+            for (int j = 0; j < raw; j++)
             {
-                int tmp = (i + j + k) % raw;
-                result[j][k] += A[j][tmp] * B[tmp][k];
-                left(A, j, 1, raw);
-                up(B, k, 1, raw);
+            #pragma omp parallel for
+                for (int k = 0; k < raw; k++)
+                {
+                    int tmp = (i + j + k) % raw;
+                    result[j][k] += A[j][tmp] * B[tmp][k];
+                    left(A, j, 1, raw);
+                    up(B, k, 1, raw);
+                }
             }
         }
     }
@@ -103,16 +124,145 @@ int** multiplication(int** A, int** B, int raw, int column)
 
 int main()
 {
-    int** A = create_matrix(3, 3, 1);
-    int** B = create_matrix(3, 3, 1);
-    cout << "A:" << endl;
-    print_matrix(A, 3, 3);
-    cout << "B:" << endl;
-    print_matrix(B, 3, 3);
-    int** C = multiplication(A, B, 3, 3);
-    cout << "C:" << endl;
-    print_matrix(C, 3, 3);
-
+    setlocale(LC_ALL, "Russian");
+    cout << "Практическая работа №2" << endl;
+    cout << "Параллельное программирование с использованием технолгии OpenMP" << endl;
+    cout << "Петрушинин Михаил\n" << endl;
+    int choose;
+    cout << "1 - Заполнить матрицу в ручную.\n2 - Заполнить матрицу автоматически\n> ";
+    cin >> choose;
+    int** A;
+    int** B;
+    int** result;
+    int threads = 0;
+    
+    if (choose == 1)
+    {
+        int n;
+        cout << "\nВведите размер квадратной матрицы A:\n> ";
+        cin >> n;
+        A = create_matrix(n, n);
+        for (int i = 0; i < n; i++)
+        {
+            for (int j = 0; j < n; j++)
+            {
+                cout << "Введите x" << i << "y" << j << "\n> ";
+                cin >> A[i][j];
+            }
+        }
+        cout << "\nВведите размер квадратной матрицы B:\n> ";
+        cin >> n;
+        B = create_matrix(n, n);
+        for (int i = 0; i < n; i++)
+        {
+            for (int j = 0; j < n; j++)
+            {
+                cout << "Введите x" << i << "y" << j << "\n> ";
+                cin >> B[i][j];
+            }
+        }
+        
+        cout << "Матрица А:" << endl;
+        print_matrix(A, n, n);
+        cout << "Матрица B:" << endl;
+        print_matrix(A, n, n);
+        
+        threads = 1;
+        double start = clock();
+        result = multiplication(A, B, n, n, threads);
+        double end = clock();
+        double sec = (end - start) / CLOCKS_PER_SEC;
+        cout << "Матрица С = AxB:" << endl;
+        print_matrix(result, n, n);
+        cout << endl;
+        cout << "Время = " << sec << "s; Количество потоков = " << threads << endl;
+        
+        threads = 2;
+        start = clock();
+        result = multiplication(A, B, n, n, threads);
+        end = clock();
+        sec = (end - start) / CLOCKS_PER_SEC;
+        cout << "Время = " << sec << "s; Количество потоков = " << threads << endl;
+        
+        threads = 4;
+        start = clock();
+        result = multiplication(A, B, n, n, threads);
+        end = clock();
+        sec = (end - start) / CLOCKS_PER_SEC;
+        cout << "Время = " << sec << "s; Количество потоков = " << threads << endl;
+        
+        threads = 8;
+        start = clock();
+        result = multiplication(A, B, n, n, threads);
+        end = clock();
+        sec = (end - start) / CLOCKS_PER_SEC;
+        cout << "Время = " << sec << "s; Количество потоков = " << threads << endl;
+        
+        threads = 16;
+        start = clock();
+        result = multiplication(A, B, n, n, threads);
+        end = clock();
+        sec = (end - start) / CLOCKS_PER_SEC;
+        cout << "Время = " << sec << "s; Количество потоков = " << threads << endl;
+        
+        threads = 32;
+        start = clock();
+        result = multiplication(A, B, n, n, threads);
+        end = clock();
+        sec = (end - start) / CLOCKS_PER_SEC;
+        cout << "Время = " << sec << "s; Количество потоков = " << threads << endl;
+    }
+    else if(choose == 2)
+    {
+        int n;
+        cout << "\nВведите размер квадратной матрицы A и B:\n> ";
+        cin >> n;
+        int** A = create_matrix(n, n, 1);
+        int** B = create_matrix(n, n, 1);
+        cout << endl;
+        
+        threads = 1;
+        double start = clock();
+        result = multiplication(A, B, n, n, threads);
+        double end = clock();
+        double sec = (end - start) / CLOCKS_PER_SEC;
+        cout << "Время = " << sec << "s; Количество потоков = " << threads << endl;
+        
+        threads = 2;
+        start = clock();
+        result = multiplication(A, B, n, n, threads);
+        end = clock();
+        sec = (end - start) / CLOCKS_PER_SEC;
+        cout << "Время = " << sec << "s; Количество потоков = " << threads << endl;
+        
+        threads = 4;
+        start = clock();
+        result = multiplication(A, B, n, n, threads);
+        end = clock();
+        sec = (end - start) / CLOCKS_PER_SEC;
+        cout << "Время = " << sec << "s; Количество потоков = " << threads << endl;
+        
+        threads = 8;
+        start = clock();
+        result = multiplication(A, B, n, n, threads);
+        end = clock();
+        sec = (end - start) / CLOCKS_PER_SEC;
+        cout << "Время = " << sec << "s; Количество потоков = " << threads << endl;
+        
+        threads = 16;
+        start = clock();
+        result = multiplication(A, B, n, n, threads);
+        end = clock();
+        sec = (end - start) / CLOCKS_PER_SEC;
+        cout << "Время = " << sec << "s; Количество потоков = " << threads << endl;
+        
+        threads = 32;
+        start = clock();
+        result = multiplication(A, B, n, n, threads);
+        end = clock();
+        sec = (end - start) / CLOCKS_PER_SEC;
+        cout << "Время = " << sec << "s; Количество потоков = " << threads << endl;
+    }
     
     return 0;
 }
