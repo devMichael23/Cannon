@@ -43,6 +43,7 @@ void print_matrix(int** array, int raw, int column)
     }
 }
 
+// Сдвинуть блок матрицы влево
 void left(int** matrix, int k, int count, int length)
 {
 #pragma omp parallel
@@ -61,6 +62,7 @@ void left(int** matrix, int k, int count, int length)
     }
 }
 
+// Сдвинуть блок матрицы вверх
 void up(int** matrix, int l, int count, int length)
 {
 #pragma omp parallel
@@ -79,6 +81,7 @@ void up(int** matrix, int l, int count, int length)
     }
 }
 
+// Осуществить умножение матрицы
 int** multiplication(int** A, int** B, int raw, int column, int threads)
 {
     int ** result = new int*[raw];
@@ -125,7 +128,7 @@ int** multiplication(int** A, int** B, int raw, int column, int threads)
 int main()
 {
     setlocale(LC_ALL, "Russian");
-    cout << "Практическая работа №2" << endl;
+    cout << "Практическая работа №3" << endl;
     cout << "Параллельное программирование с использованием технолгии OpenMP" << endl;
     cout << "Петрушинин Михаил\n" << endl;
     int choose;
