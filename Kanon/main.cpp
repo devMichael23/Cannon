@@ -97,12 +97,12 @@ int** multiplication(int** A, int** B, int raw, int column, int threads)
     #pragma omp parallel for
         for (int i = 0; i < raw; i++)
         {
-        left(A, i, i, raw);
+            left(A, i, i, raw);
         }
     #pragma omp parallel for
         for (int i = 0; i < raw; i++)
         {
-        up(B, i, i, raw);
+            up(B, i, i, raw);
         }
     
     #pragma omp parallel for
@@ -168,7 +168,7 @@ int main()
         cout << "Матрица А:" << endl;
         print_matrix(A, n, n);
         cout << "Матрица B:" << endl;
-        print_matrix(A, n, n);
+        print_matrix(B, n, n);
         
         threads = 1;
         double start = clock();
