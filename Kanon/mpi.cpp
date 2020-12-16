@@ -71,7 +71,7 @@ void up(int** matrix, int l, int count, int length)
     }
 }
 
-// Последовательное умножение матриц
+// Последовательное умножение матриц алгоритмом Кэнона
 int** multiplication(int** A, int** B, int raw, int column)
 {
     int** result = new int* [raw];
@@ -104,6 +104,7 @@ int** multiplication(int** A, int** B, int raw, int column)
     return result;
 }
 
+// Умножение матриц алгоритмом Кэнона
 void mpi(int rank, int size, int n)
 {
     int shift;
@@ -130,18 +131,18 @@ void mpi(int rank, int size, int n)
 
     N = n / dims[0];
 
-    A = (double*)malloc(N * N * sizeof(double));
-    B = (double*)malloc(N * N * sizeof(double));
-    buf = (double*)malloc(N * N * sizeof(double));
-    C = (double*)calloc(N * N, sizeof(double));
+    A = (double*)malloc(N*N * sizeof(double));
+    B = (double*)malloc(N*N * sizeof(double));
+    buf = (double*)malloc(N*N * sizeof(double));
+    C = (double*)calloc(N*N, sizeof(double));
 
     for (i = 0; i < N; i++)
     {
         for (j = 0; j < N; j++)
         {
-            A[i * N + j] = 5 - (int)(10 * rand() / (RAND_MAX + 1));
-            B[i * N + j] = 5 - (int)(10 * rand() / (RAND_MAX + 1));
-            C[i * N + j] = 0;
+            A[i*N+j] = 5 - (int)(10 * rand() / (RAND_MAX + 1));
+            B[i*N+j] = 5 - (int)(10 * rand() / (RAND_MAX + 1));
+            C[i*N+j] = 0;
         }
     }
 
@@ -156,15 +157,16 @@ void mpi(int rank, int size, int n)
         for (i = 0; i < N; i++)
             for (k = 0; k < N; k++)
                 for (j = 0; j < N; j++)
-                    C[i * N + j] += A[i * N + k] * B[k * N + j];
+                    C[i*N+j] += A[i*N+k] * B[k*N+j];
 
-        if (shift == dims[0] - 1)
+        if (shift == (dims[0] - 1))
             break;
 
         MPI_Sendrecv(A, N * N, MPI_DOUBLE, left, 1, buf, N * N, MPI_DOUBLE, right, 1, comm, MPI_STATUS_IGNORE);
         tmp = buf;
         buf = A;
         A = tmp;
+
         MPI_Sendrecv(B, N * N, MPI_DOUBLE, up, 2, buf, N * N, MPI_DOUBLE, down, 2, comm, MPI_STATUS_IGNORE);
         tmp = buf;
         buf = B;
@@ -173,7 +175,6 @@ void mpi(int rank, int size, int n)
 
     MPI_Barrier(comm);
 
-    double end = MPI_Wtime();
 
     if (rank == 0)
     {
@@ -182,6 +183,7 @@ void mpi(int rank, int size, int n)
         cout << "n = " << n << endl;
         cout << "time = " << time << "sec; p = " << size << endl;
     }
+
     free(A); 
     free(B); 
     free(buf);
@@ -241,9 +243,12 @@ void run(int* n, int size, int rank, bool isMpi, int code = 0)
             print_matrix(B, n, n);
 
             clock_t start = clock();
+
             int** result = multiplication(A, B, n, n);
+
             clock_t end = clock();
             double sec = (double)(end - start) / CLOCKS_PER_SEC;
+
             cout << "Матрица С = AxB:" << endl;
             print_matrix(result, n, n);
             cout << endl;
